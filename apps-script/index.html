@@ -86,6 +86,18 @@
   let state = { capacity:20, length:0, empty:true, full:false, data:[] };
   let busy = false;
 
+  function queueTransport(action, payload, success, failure) {
+    if (window.google && google.script && google.script.run) {
+      google.script.run.withSuccessHandler(success).withFailureHandler(failure).queueRequest(action,payload);
+      return;
+    }
+    let sessionId=localStorage.getItem('fixedQueueSession');
+    if(!sessionId){sessionId=crypto.randomUUID();localStorage.setItem('fixedQueueSession',sessionId);}
+    fetch('/api/queue',{method:'POST',headers:{'content-type':'application/json','x-queue-session':sessionId},body:JSON.stringify({action,...payload})})
+      .then(async response=>{const data=await response.json();if(!response.ok||!data.ok)throw new Error(data.error||'서버 오류');return data;})
+      .then(success).catch(failure);
+  }
+
   const num = id => Number(document.getElementById(id).value);
   function render(next) {
     state = { ...state, ...next };
@@ -107,11 +119,11 @@
   function request(action,payload,label) {
     return new Promise((resolve,reject) => {
       addLog('사용자 → '+label,{action,...payload});
-      google.script.run.withSuccessHandler(data => {
+      queueTransport(action,payload,data => {
         render(data.result); addLog('AWS 서버 → '+label,data.result); resolve(data.result);
-      }).withFailureHandler(error => {
+      },error => {
         addLog('오류 → '+label,error.message||String(error),true); reject(error);
-      }).queueRequest(action,payload);
+      });
     });
   }
   async function act(action,payload,label) { try { await request(action,payload,label); } catch (_) {} }
@@ -137,7 +149,11 @@
     } catch (_) {} finally { busy=false; document.querySelectorAll('button').forEach(b=>b.disabled=false); }
   }
   render(state);
-  google.script.run.withSuccessHandler(info => { document.getElementById('connection').textContent='AWS 연결됨 · HTTP '+info.status; }).withFailureHandler(() => { document.getElementById('connection').textContent='AWS 연결 실패'; }).checkServer();
+  if(window.google && google.script && google.script.run) {
+    google.script.run.withSuccessHandler(info => { document.getElementById('connection').textContent='AWS 연결됨 · HTTP '+info.status; }).withFailureHandler(() => { document.getElementById('connection').textContent='AWS 연결 실패'; }).checkServer();
+  } else {
+    fetch('/healthz').then(r=>{document.getElementById('connection').textContent='AWS 연결됨 · HTTP '+r.status;}).catch(()=>{document.getElementById('connection').textContent='AWS 연결 실패';});
+  }
 </script>
 </body>
 </html>

@@ -4,9 +4,9 @@
 
 ## 배포 주소
 
-- AWS API: https://psadxjuzdx.ap-northeast-1.awsapprunner.com
+- 동작 화면 및 AWS API: https://psadxjuzdx.ap-northeast-1.awsapprunner.com
 - 상태 검사: https://psadxjuzdx.ap-northeast-1.awsapprunner.com/healthz
-- GAS 웹 앱: Apps Script API 활성화 후 이 문서에 추가
+- GAS 웹 앱: https://script.google.com/macros/s/AKfycbxeJsF46ebP_8UkHugHQVxRIOTDnB354EQj2RCz2Hp4B2EWyXDM9z3Rapl-jO6zxq6U/exec
 
 ## 구현 기능
 

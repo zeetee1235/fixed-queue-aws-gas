@@ -1,9 +1,11 @@
 import http from 'node:http';
+import { readFile } from 'node:fs/promises';
 import { FixedQueue, executeQueueAction } from './queue.mjs';
 
 const port = Number(process.env.PORT || 8080);
 const sessions = new Map();
 const SESSION_LIMIT = 1000;
+const clientHtml = await readFile(new URL('./apps-script/index.html', import.meta.url), 'utf8');
 
 function send(response, status, body) {
   response.writeHead(status, {
@@ -14,6 +16,14 @@ function send(response, status, body) {
     'cache-control': 'no-store'
   });
   response.end(JSON.stringify(body));
+}
+
+function sendHtml(response, body) {
+  response.writeHead(200, {
+    'content-type': 'text/html; charset=utf-8',
+    'cache-control': 'no-store'
+  });
+  response.end(body);
 }
 
 async function readJson(request) {
@@ -45,12 +55,7 @@ const server = http.createServer(async (request, response) => {
       return send(response, 200, { ok: true, service: 'fixed-queue-server' });
     }
     if (request.method === 'GET' && url.pathname === '/') {
-      return send(response, 200, {
-        ok: true,
-        service: 'fixed-queue-server',
-        endpoint: 'POST /api/queue',
-        actions: ['initialize', 'push', 'pop', 'size', 'status', 'front', 'clear', 'index', 'count', 'contains', 'list']
-      });
+      return sendHtml(response, clientHtml);
     }
     if (request.method === 'POST' && url.pathname === '/api/queue') {
       const payload = await readJson(request);
