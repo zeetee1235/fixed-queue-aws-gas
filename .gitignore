@@ -1,4 +1,5 @@
 .clasp.json
 .env
+.aws-setup/
 node_modules/
 test-results/
