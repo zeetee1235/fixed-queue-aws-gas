@@ -4,38 +4,38 @@
   <base target="_top">
   <meta charset="utf-8">
   <style>
-    :root { --ink:#172033; --muted:#667085; --line:#d7deea; --blue:#3157d5; --cyan:#10a6a1; --bg:#f3f6fb; --danger:#c93756; }
+    :root { --ink:#202124; --muted:#5f6368; --line:#c9cdd2; --navy:#243b53; --soft:#f4f5f6; --danger:#8b2f32; }
     * { box-sizing:border-box; }
-    body { margin:0; font-family:Inter,Pretendard,"Noto Sans KR",system-ui,sans-serif; color:var(--ink); background:linear-gradient(135deg,#eef3ff,#f8fbff 55%,#e8fbf8); min-height:100vh; }
-    main { max-width:1180px; margin:auto; padding:36px 20px 60px; }
-    header { display:flex; justify-content:space-between; gap:24px; align-items:flex-end; margin-bottom:22px; }
-    h1 { margin:0; font-size:clamp(28px,5vw,48px); letter-spacing:-.05em; }
-    header p { margin:8px 0 0; color:var(--muted); }
-    .badge { padding:8px 12px; border-radius:999px; background:#dcf8f2; color:#087c72; font-weight:800; white-space:nowrap; }
-    .panel { background:rgba(255,255,255,.94); border:1px solid rgba(210,220,235,.9); border-radius:20px; box-shadow:0 14px 40px rgba(41,60,100,.10); padding:20px; }
-    .queue-panel { margin-bottom:18px; }
+    body { margin:0; font-family:"Noto Sans KR","Malgun Gothic",Arial,sans-serif; color:var(--ink); background:#f5f6f7; min-height:100vh; font-size:14px; }
+    main { max-width:1120px; margin:auto; padding:28px 20px 48px; }
+    header { display:flex; justify-content:space-between; gap:24px; align-items:flex-end; border-bottom:2px solid var(--navy); padding-bottom:14px; margin-bottom:18px; }
+    h1 { margin:0; font-size:28px; font-weight:700; letter-spacing:-.03em; }
+    header p { margin:6px 0 0; color:var(--muted); }
+    .badge { padding:6px 10px; border:1px solid #7c8b99; background:white; color:#34495e; font-size:12px; font-weight:600; white-space:nowrap; }
+    .panel { background:white; border:1px solid var(--line); padding:18px; }
+    .queue-panel { margin-bottom:14px; }
     .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
-    .metric { background:#f5f7fb; border-radius:14px; padding:13px; }
+    .metric { background:var(--soft); border:1px solid #e1e4e8; padding:11px; }
     .metric span { display:block; color:var(--muted); font-size:12px; margin-bottom:4px; }
-    .metric strong { font-size:20px; }
+    .metric strong { font-size:18px; }
     .queue { display:grid; grid-template-columns:repeat(10,1fr); gap:8px; }
-    .cell { position:relative; min-height:64px; display:grid; place-items:center; border:2px dashed var(--line); border-radius:12px; color:#a0a9b8; font-weight:800; transition:.2s; }
-    .cell.filled { border-style:solid; border-color:#8ea4ef; color:#19378e; background:#edf1ff; transform:translateY(-2px); }
-    .cell.front { border-color:var(--cyan); background:#ddf8f4; color:#087c72; }
+    .cell { position:relative; min-height:58px; display:grid; place-items:center; border:1px dashed var(--line); color:#9aa0a6; font-weight:700; }
+    .cell.filled { border-style:solid; border-color:#8494a3; color:#1f2d3d; background:#eef1f4; }
+    .cell.front { border:2px solid var(--navy); background:#dfe7ee; color:#182b3a; }
     .idx { position:absolute; top:4px; left:7px; color:#8b95a7; font-size:10px; font-weight:500; }
-    .layout { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
-    h2 { margin:0 0 14px; font-size:18px; }
+    .layout { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    h2 { margin:0 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line); font-size:16px; }
     .controls { display:grid; gap:10px; }
     .row { display:flex; gap:8px; flex-wrap:wrap; }
-    input { min-width:90px; flex:1; border:1px solid var(--line); border-radius:10px; padding:11px; font:inherit; }
-    button { border:0; border-radius:10px; padding:11px 14px; color:white; background:var(--blue); font-weight:750; cursor:pointer; transition:.15s; }
-    button:hover { filter:brightness(1.08); transform:translateY(-1px); }
-    button.secondary { color:#273550; background:#e9edf5; }
+    input { min-width:90px; flex:1; border:1px solid #aeb4ba; padding:9px 10px; font:inherit; background:white; }
+    button { border:1px solid #1c3040; padding:9px 12px; color:white; background:var(--navy); font-weight:600; cursor:pointer; }
+    button:hover { background:#172b3a; }
+    button.secondary { color:#273550; background:#edf0f2; border-color:#aeb4ba; }
     button.danger { background:var(--danger); }
-    button.demo { width:100%; padding:15px; font-size:16px; background:linear-gradient(90deg,var(--blue),#6a43cf); }
+    button.demo { width:100%; padding:11px; font-size:14px; background:#152f46; }
     button:disabled { opacity:.5; cursor:wait; }
     .logs { max-height:400px; overflow:auto; display:grid; gap:8px; }
-    .log { border-left:4px solid var(--blue); background:#f7f9fc; border-radius:8px; padding:10px 12px; }
+    .log { border-left:3px solid var(--navy); background:#f5f6f7; padding:9px 11px; }
     .log.error { border-color:var(--danger); }
     .log time { color:var(--muted); font-size:11px; }
     .log b { display:block; margin:3px 0; }
@@ -47,7 +47,7 @@
 <body>
 <main>
   <header>
-    <div><h1>Fixed Queue Lab</h1><p>AWS 서버 연산과 사용자의 수행 동작을 동시에 기록합니다.</p></div>
+    <div><h1>고정길이 큐 연산 시스템</h1><p>큐 연산 결과와 사용자의 수행 동작 기록</p></div>
     <div class="badge" id="connection">서버 확인 중</div>
   </header>
 
@@ -120,7 +120,7 @@
     return new Promise((resolve,reject) => {
       addLog('사용자 → '+label,{action,...payload});
       queueTransport(action,payload,data => {
-        render(data.result); addLog('AWS 서버 → '+label,data.result); resolve(data.result);
+        render(data.result); addLog('서버 결과 → '+label,data.result); resolve(data.result);
       },error => {
         addLog('오류 → '+label,error.message||String(error),true); reject(error);
       });
@@ -150,9 +150,9 @@
   }
   render(state);
   if(window.google && google.script && google.script.run) {
-    google.script.run.withSuccessHandler(info => { document.getElementById('connection').textContent='AWS 연결됨 · HTTP '+info.status; }).withFailureHandler(() => { document.getElementById('connection').textContent='AWS 연결 실패'; }).checkServer();
+    google.script.run.withSuccessHandler(info => { document.getElementById('connection').textContent='서버 정상 · HTTP '+info.status; }).withFailureHandler(() => { document.getElementById('connection').textContent='서버 연결 실패'; }).checkServer();
   } else {
-    fetch('/healthz').then(r=>{document.getElementById('connection').textContent='AWS 연결됨 · HTTP '+r.status;}).catch(()=>{document.getElementById('connection').textContent='AWS 연결 실패';});
+    fetch('/healthz').then(r=>{document.getElementById('connection').textContent='서버 정상 · HTTP '+r.status;}).catch(()=>{document.getElementById('connection').textContent='서버 연결 실패';});
   }
 </script>
 </body>
