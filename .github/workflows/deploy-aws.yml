@@ -1,0 +1,37 @@
+name: deploy-aws
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - package.json
+      - queue.mjs
+      - server.mjs
+      - test/**
+      - .github/workflows/deploy-aws.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+  id-token: write
+concurrency:
+  group: fixed-queue-aws
+  cancel-in-progress: true
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+      - name: Build and push
+        env:
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t "$REGISTRY/fixed-queue-server:$IMAGE_TAG" -t "$REGISTRY/fixed-queue-server:latest" .
+          docker push "$REGISTRY/fixed-queue-server:$IMAGE_TAG"
+          docker push "$REGISTRY/fixed-queue-server:latest"

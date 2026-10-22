@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root { --ink:#172033; --muted:#667085; --line:#d7deea; --blue:#3157d5; --cyan:#10a6a1; --bg:#f3f6fb; --danger:#c93756; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,Pretendard,"Noto Sans KR",system-ui,sans-serif; color:var(--ink); background:linear-gradient(135deg,#eef3ff,#f8fbff 55%,#e8fbf8); min-height:100vh; }
+    main { max-width:1180px; margin:auto; padding:36px 20px 60px; }
+    header { display:flex; justify-content:space-between; gap:24px; align-items:flex-end; margin-bottom:22px; }
+    h1 { margin:0; font-size:clamp(28px,5vw,48px); letter-spacing:-.05em; }
+    header p { margin:8px 0 0; color:var(--muted); }
+    .badge { padding:8px 12px; border-radius:999px; background:#dcf8f2; color:#087c72; font-weight:800; white-space:nowrap; }
+    .panel { background:rgba(255,255,255,.94); border:1px solid rgba(210,220,235,.9); border-radius:20px; box-shadow:0 14px 40px rgba(41,60,100,.10); padding:20px; }
+    .queue-panel { margin-bottom:18px; }
+    .metrics { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:18px; }
+    .metric { background:#f5f7fb; border-radius:14px; padding:13px; }
+    .metric span { display:block; color:var(--muted); font-size:12px; margin-bottom:4px; }
+    .metric strong { font-size:20px; }
+    .queue { display:grid; grid-template-columns:repeat(10,1fr); gap:8px; }
+    .cell { position:relative; min-height:64px; display:grid; place-items:center; border:2px dashed var(--line); border-radius:12px; color:#a0a9b8; font-weight:800; transition:.2s; }
+    .cell.filled { border-style:solid; border-color:#8ea4ef; color:#19378e; background:#edf1ff; transform:translateY(-2px); }
+    .cell.front { border-color:var(--cyan); background:#ddf8f4; color:#087c72; }
+    .idx { position:absolute; top:4px; left:7px; color:#8b95a7; font-size:10px; font-weight:500; }
+    .layout { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    h2 { margin:0 0 14px; font-size:18px; }
+    .controls { display:grid; gap:10px; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; }
+    input { min-width:90px; flex:1; border:1px solid var(--line); border-radius:10px; padding:11px; font:inherit; }
+    button { border:0; border-radius:10px; padding:11px 14px; color:white; background:var(--blue); font-weight:750; cursor:pointer; transition:.15s; }
+    button:hover { filter:brightness(1.08); transform:translateY(-1px); }
+    button.secondary { color:#273550; background:#e9edf5; }
+    button.danger { background:var(--danger); }
+    button.demo { width:100%; padding:15px; font-size:16px; background:linear-gradient(90deg,var(--blue),#6a43cf); }
+    button:disabled { opacity:.5; cursor:wait; }
+    .logs { max-height:400px; overflow:auto; display:grid; gap:8px; }
+    .log { border-left:4px solid var(--blue); background:#f7f9fc; border-radius:8px; padding:10px 12px; }
+    .log.error { border-color:var(--danger); }
+    .log time { color:var(--muted); font-size:11px; }
+    .log b { display:block; margin:3px 0; }
+    .log code { color:#45516a; white-space:pre-wrap; word-break:break-word; font-size:12px; }
+    .hint { color:var(--muted); font-size:12px; margin-top:12px; }
+    @media (max-width:760px) { .layout{grid-template-columns:1fr}.queue{grid-template-columns:repeat(5,1fr)}.metrics{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column} }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>Fixed Queue Lab</h1><p>AWS 서버 연산과 사용자의 수행 동작을 동시에 기록합니다.</p></div>
+    <div class="badge" id="connection">서버 확인 중</div>
+  </header>
+
+  <section class="panel queue-panel">
+    <div class="metrics">
+      <div class="metric"><span>CAPACITY</span><strong id="capacity">20</strong></div>
+      <div class="metric"><span>SIZE</span><strong id="length">0</strong></div>
+      <div class="metric"><span>EMPTY</span><strong id="empty">true</strong></div>
+      <div class="metric"><span>FULL</span><strong id="full">false</strong></div>
+    </div>
+    <div class="queue" id="queue"></div>
+    <div class="hint">청록색은 front, 숫자는 배열 인덱스(0부터 시작)를 나타냅니다.</div>
+  </section>
+
+  <div class="layout">
+    <section class="panel">
+      <h2>큐 명령</h2>
+      <div class="controls">
+        <button class="demo" onclick="runScenario()">시험 시나리오 자동 실행</button>
+        <div class="row"><input id="capacityInput" type="number" value="20" min="1" max="1000"><button onclick="act('initialize',{capacity:num('capacityInput')},'큐 초기화')">1. 초기화</button></div>
+        <div class="row"><input id="pushInput" value="19" placeholder="값 또는 1,2,3"><button onclick="pushValues()">2. PUSH</button><button class="secondary" onclick="act('pop',{},'POP')">POP</button></div>
+        <div class="row"><button onclick="act('size',{},'현재 데이터 개수 확인')">3. 크기</button><button onclick="act('status',{},'FULL/EMPTY 상태 확인')">4. 상태</button><button onclick="act('front',{},'전면 데이터 확인')">5. FRONT</button></div>
+        <div class="row"><button class="danger" onclick="act('clear',{},'큐 전체 삭제')">6. 전체 삭제</button></div>
+        <div class="row"><input id="searchInput" type="number" value="42"><button onclick="search('index','인덱스 검색')">7. INDEX</button><button onclick="search('count','값 개수 확인')">8. COUNT</button><button onclick="search('contains','존재 여부 확인')">9. EXISTS</button></div>
+        <button onclick="act('list',{},'front부터 rear까지 전체 출력')">10. 전체 출력</button>
+      </div>
+    </section>
+    <section class="panel">
+      <h2>사용자 동작 및 서버 수행 결과</h2>
+      <div class="logs" id="logs"></div>
+    </section>
+  </div>
+</main>
+<script>
+  const examValues = [19,15,29,25,33,35,43,42,50,55,62,68,77,80];
+  let state = { capacity:20, length:0, empty:true, full:false, data:[] };
+  let busy = false;
+
+  const num = id => Number(document.getElementById(id).value);
+  function render(next) {
+    state = { ...state, ...next };
+    ['capacity','length','empty','full'].forEach(k => document.getElementById(k).textContent = state[k]);
+    const root = document.getElementById('queue'); root.innerHTML = '';
+    for (let i=0; i<state.capacity; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell' + (i < state.data.length ? ' filled' : '') + (i === 0 && state.data.length ? ' front' : '');
+      cell.innerHTML = `<span class="idx">${i}</span>${i < state.data.length ? state.data[i] : '—'}`;
+      root.appendChild(cell);
+    }
+  }
+  function addLog(label, payload, error=false) {
+    const item=document.createElement('div'); item.className='log'+(error?' error':'');
+    item.innerHTML=`<time>${new Date().toLocaleTimeString('ko-KR')}</time><b>${label}</b><code>${escapeHtml(typeof payload==='string'?payload:JSON.stringify(payload,null,2))}</code>`;
+    document.getElementById('logs').prepend(item);
+  }
+  const escapeHtml = text => text.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function request(action,payload,label) {
+    return new Promise((resolve,reject) => {
+      addLog('사용자 → '+label,{action,...payload});
+      google.script.run.withSuccessHandler(data => {
+        render(data.result); addLog('AWS 서버 → '+label,data.result); resolve(data.result);
+      }).withFailureHandler(error => {
+        addLog('오류 → '+label,error.message||String(error),true); reject(error);
+      }).queueRequest(action,payload);
+    });
+  }
+  async function act(action,payload,label) { try { await request(action,payload,label); } catch (_) {} }
+  function pushValues() {
+    const raw=document.getElementById('pushInput').value.trim();
+    const values=raw.split(',').map(v=>Number(v.trim()));
+    if(values.some(Number.isNaN)) return addLog('입력 오류','숫자 또는 쉼표로 구분한 숫자를 입력하세요.',true);
+    return act('push',values.length>1?{values}:{value:values[0]},'PUSH '+raw);
+  }
+  function search(action,label) { return act(action,{value:num('searchInput')},label+' '+num('searchInput')); }
+  async function runScenario() {
+    if(busy) return; busy=true; document.querySelectorAll('button').forEach(b=>b.disabled=true); document.getElementById('logs').innerHTML='';
+    try {
+      await request('initialize',{capacity:20},'용량 20으로 초기화');
+      await request('push',{values:examValues},'제시된 배열 14개 PUSH');
+      await request('status',{},'현재 상태 확인');
+      await request('front',{},'전면 데이터 확인');
+      await request('index',{value:42},'42의 인덱스/위치 확인');
+      await request('count',{value:42},'42의 개수 확인');
+      await request('contains',{value:88},'88 존재 여부 확인');
+      await request('list',{},'front부터 rear까지 전체 출력');
+      addLog('시나리오 완료','모든 단계가 정상 수행되었습니다.');
+    } catch (_) {} finally { busy=false; document.querySelectorAll('button').forEach(b=>b.disabled=false); }
+  }
+  render(state);
+  google.script.run.withSuccessHandler(info => { document.getElementById('connection').textContent='AWS 연결됨 · HTTP '+info.status; }).withFailureHandler(() => { document.getElementById('connection').textContent='AWS 연결 실패'; }).checkServer();
+</script>
+</body>
+</html>
