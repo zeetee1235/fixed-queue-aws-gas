@@ -7,6 +7,7 @@ on:
       - package.json
       - queue.mjs
       - server.mjs
+      - apps-script/index.html
       - test/**
       - .github/workflows/deploy-aws.yml
   workflow_dispatch:
